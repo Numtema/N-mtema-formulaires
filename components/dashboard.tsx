@@ -106,28 +106,68 @@ export function Dashboard() {
     const details = []
     const data = submission.data
 
-    // Afficher les détails spécifiques selon le type
-    if (submission.formType === "sondage") {
-      if (data.note_globale) details.push(`Note: ${data.note_globale}`)
-      if (data.satisfaction) details.push(`Satisfaction: ${data.satisfaction}`)
-      if (data.recommandation) details.push(`Recommandation: ${data.recommandation}`)
-    } else if (submission.formType === "devis") {
-      if (data.entreprise) details.push(`Entreprise: ${data.entreprise}`)
-      if (data.secteur) details.push(`Secteur: ${data.secteur}`)
-      if (data.budget) details.push(`Budget: ${data.budget}€`)
-    } else if (submission.formType === "candidature") {
-      if (data.disponibilite) details.push(`Disponibilité: ${data.disponibilite}`)
-    } else if (submission.formType === "inscription") {
-      if (data.session) details.push(`Session: ${data.session}`)
-    } else if (submission.formType === "custom") {
-      // Pour les formulaires personnalisés, afficher quelques champs clés
-      if (data.pays_expedition) details.push(`De: ${data.pays_expedition}`)
-      if (data.pays_arrivee) details.push(`Vers: ${data.pays_arrivee}`)
-      if (data.type_envoi) details.push(`Type: ${data.type_envoi}`)
-      if (data.poids) details.push(`Poids: ${data.poids}kg`)
-    }
+    // Afficher TOUS les champs de la soumission (sauf les métadonnées internes)
+    Object.entries(data).forEach(([key, value]) => {
+      // Ignorer les champs internes et métadonnées
+      if (key.startsWith("_") || !value || value === "") return
+
+      // Ignorer les champs déjà affichés dans l'en-tête
+      if (["normalizedName", "normalizedEmail", "normalizedMessage"].includes(key)) return
+
+      // Formater la clé pour l'affichage
+      const displayKey = key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+
+      // Formater la valeur selon le type
+      let displayValue = value
+      if (typeof value === "string" && value.length > 50) {
+        displayValue = value.substring(0, 50) + "..."
+      }
+
+      details.push(`${displayKey}: ${displayValue}`)
+    })
 
     return details
+  }
+
+  const renderFullSubmissionDetails = (submission: Submission) => {
+    const data = submission.data
+    const allFields: { key: string; value: any; type: string }[] = []
+
+    // Collecter tous les champs avec leur type
+    Object.entries(data).forEach(([key, value]) => {
+      if (!value || value === "") return
+
+      let type = "text"
+      let displayValue = value
+
+      // Déterminer le type de champ
+      if (key.includes("email")) type = "email"
+      else if (key.includes("tel") || key.includes("phone")) type = "phone"
+      else if (key.includes("date")) type = "date"
+      else if (key.includes("url") || key.includes("http")) type = "url"
+      else if (key.includes("file") || (typeof value === "string" && value.includes("blob.vercel-storage.com")))
+        type = "file"
+      else if (typeof value === "boolean") type = "boolean"
+      else if (typeof value === "number") type = "number"
+      else if (typeof value === "string" && value.length > 100) type = "textarea"
+
+      // Formater la valeur selon le type
+      if (type === "boolean") {
+        displayValue = value ? "✅ Oui" : "❌ Non"
+      } else if (type === "date") {
+        displayValue = new Date(value).toLocaleDateString()
+      } else if (type === "file") {
+        displayValue = value
+      }
+
+      allFields.push({
+        key: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+        value: displayValue,
+        type,
+      })
+    })
+
+    return allFields
   }
 
   const getDisplayName = (submission: Submission) => {
@@ -317,18 +357,66 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {/* Détails spécifiques au type de formulaire */}
-              {renderSubmissionDetails(submission).length > 0 && (
-                <div className="mb-3 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                  <div className="flex flex-wrap gap-2">
-                    {renderSubmissionDetails(submission).map((detail, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {detail}
-                      </Badge>
+              {/* NOUVEAU: Affichage détaillé de TOUS les champs */}
+              <div className="mb-3">
+                <details className="group">
+                  <summary className="cursor-pointer text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 flex items-center gap-2">
+                    <span className="group-open:rotate-90 transition-transform">▶</span>
+                    Voir tous les détails (
+                    {Object.keys(submission.data).filter((k) => !k.startsWith("_") && submission.data[k]).length}{" "}
+                    champs)
+                  </summary>
+                  <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg space-y-2">
+                    {renderFullSubmissionDetails(submission).map((field, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 py-1 border-b border-slate-200 dark:border-slate-700 last:border-b-0"
+                      >
+                        <span className="font-medium text-sm text-slate-700 dark:text-slate-300 min-w-[120px]">
+                          {field.key}:
+                        </span>
+                        <span className="text-sm text-slate-600 dark:text-slate-400 flex-1">
+                          {field.type === "email" && (
+                            <a href={`mailto:${field.value}`} className="text-blue-600 hover:underline">
+                              {field.value}
+                            </a>
+                          )}
+                          {field.type === "phone" && (
+                            <a href={`tel:${field.value}`} className="text-blue-600 hover:underline">
+                              {field.value}
+                            </a>
+                          )}
+                          {field.type === "url" && (
+                            <a
+                              href={field.value}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {field.value}
+                            </a>
+                          )}
+                          {field.type === "file" && (
+                            <a
+                              href={field.value}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-green-600 hover:underline flex items-center gap-1"
+                            >
+                              <FileText className="w-3 h-3" />
+                              Voir le fichier
+                            </a>
+                          )}
+                          {!["email", "phone", "url", "file"].includes(field.type) && field.value}
+                        </span>
+                        <Badge variant="outline" className="text-xs self-start sm:self-center">
+                          {field.type}
+                        </Badge>
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
+                </details>
+              </div>
 
               {/* Message principal */}
               {getDisplayMessage(submission) && (
@@ -336,6 +424,51 @@ export function Dashboard() {
                   {getDisplayMessage(submission)}
                 </p>
               )}
+
+              {/* Métadonnées techniques (pour debug) */}
+              <details className="mt-3 group">
+                <summary className="cursor-pointer text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1">
+                  <span className="group-open:rotate-90 transition-transform">▶</span>
+                  Métadonnées techniques
+                </summary>
+                <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-900 rounded text-xs font-mono">
+                  <div>
+                    <strong>ID:</strong> {submission.id}
+                  </div>
+                  <div>
+                    <strong>Timestamp:</strong> {submission.timestamp}
+                  </div>
+                  <div>
+                    <strong>Type:</strong> {submission.formType}
+                  </div>
+                  <div>
+                    <strong>Test:</strong> {submission.isTest ? "Oui" : "Non"}
+                  </div>
+                  <div>
+                    <strong>Embed:</strong> {submission.data.isEmbedded ? "Oui" : "Non"}
+                  </div>
+                  {submission.data.isEmbedded && (
+                    <>
+                      <div>
+                        <strong>URL Embed:</strong> {submission.data.embedUrl}
+                      </div>
+                      <div>
+                        <strong>Domaine:</strong> {submission.data.embedDomain}
+                      </div>
+                    </>
+                  )}
+                  {submission.data.ip && (
+                    <div>
+                      <strong>IP:</strong> {submission.data.ip}
+                    </div>
+                  )}
+                  {submission.data.userAgent && (
+                    <div>
+                      <strong>User Agent:</strong> {submission.data.userAgent.substring(0, 50)}...
+                    </div>
+                  )}
+                </div>
+              </details>
 
               {/* URL d'embed si applicable */}
               {submission.data.isEmbedded && submission.data.embedUrl && (
