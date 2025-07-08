@@ -118,6 +118,21 @@ export function ApiConfig() {
 
             <Alert className="rounded-xl border-0 glass-card">
               <AlertDescription className="text-xs">
+                <strong>🔑 Statut de la clé API :</strong>
+                <br />
+                {apiKey && apiKey.length > 20 ? (
+                  <span className="text-green-600">✅ Clé API configurée (longueur: {apiKey.length} caractères)</span>
+                ) : (
+                  <span className="text-red-600">❌ Clé API invalide ou trop courte</span>
+                )}
+                <br />
+                <strong>Note :</strong> Si l'API Gemini échoue, le système utilisera automatiquement des templates de
+                fallback.
+              </AlertDescription>
+            </Alert>
+
+            <Alert className="rounded-xl border-0 glass-card">
+              <AlertDescription className="text-xs">
                 <strong>Note :</strong> La clé API est stockée localement dans votre navigateur et utilisée pour les
                 requêtes vers l'API Gemini.
               </AlertDescription>

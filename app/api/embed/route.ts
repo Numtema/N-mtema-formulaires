@@ -286,6 +286,23 @@ export async function GET(request: NextRequest) {
                 border-radius: 16px;
             }
         }
+        .numtema-button-secondary {
+          width: 100%;
+          padding: 12px 24px;
+          background: transparent;
+          color: #6366f1;
+          border: 2px solid #6366f1;
+          border-radius: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          font-size: 14px;
+          margin-top: 8px;
+        }
+        .numtema-button-secondary:hover {
+          background: #6366f1;
+          color: white;
+        }
     </style>
 </head>
 <body>
@@ -294,8 +311,17 @@ export async function GET(request: NextRequest) {
         <form id="numtema-form" onsubmit="submitForm(event)">
             ${fieldsHTML}
             <button type="submit" class="numtema-button" id="submit-btn">
-                Envoyer
+              ${formData?._metadata?.cta || "Envoyer"}
             </button>
+            ${
+              formData?._metadata?.ctaSecondary
+                ? `
+            <button type="button" class="numtema-button-secondary" id="secondary-btn" onclick="handleSecondaryAction()">
+              ${formData._metadata.ctaSecondary}
+            </button>
+            `
+                : ""
+            }
         </form>
         <div id="response-area"></div>
         <div class="numtema-powered">
@@ -387,6 +413,11 @@ export async function GET(request: NextRequest) {
         
         // Resize initial
         setTimeout(resizeIframe, 100);
+
+        function handleSecondaryAction() {
+          alert('Action secondaire : ${formData?._metadata?.ctaSecondary || "Action"}');
+          // Ici vous pouvez ajouter votre logique personnalisée
+        }
     </script>
 </body>
 </html>

@@ -78,6 +78,8 @@ export function Dashboard() {
         return "📧"
       case "custom":
         return "🎨"
+      case "expedition":
+        return "🚚"
       default:
         return "📝"
     }
@@ -97,6 +99,8 @@ export function Dashboard() {
         return "bg-gray-100 text-gray-800"
       case "custom":
         return "bg-indigo-100 text-indigo-800"
+      case "expedition":
+        return "bg-yellow-100 text-yellow-800"
       default:
         return "bg-slate-100 text-slate-800"
     }
@@ -125,6 +129,15 @@ export function Dashboard() {
 
       details.push(`${displayKey}: ${displayValue}`)
     })
+
+    if (submission.formType === "expedition" || submission.data.ville_origine) {
+      if (submission.data.ville_origine) details.push(`🚀 De: ${submission.data.ville_origine}`)
+      if (submission.data.ville_destination) details.push(`🎯 Vers: ${submission.data.ville_destination}`)
+      if (submission.data.poids_colis) details.push(`⚖️ Poids: ${submission.data.poids_colis}kg`)
+      if (submission.data.type_envoi) details.push(`📦 Service: ${submission.data.type_envoi}`)
+      if (submission.data.nom_expediteur) details.push(`👤 Expéditeur: ${submission.data.nom_expediteur}`)
+      if (submission.data.nom_destinataire) details.push(`👥 Destinataire: ${submission.data.nom_destinataire}`)
+    }
 
     return details
   }

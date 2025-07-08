@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Wand2, RotateCcw, CheckCircle, Code, Eye, Cloud } from "lucide-react"
+import { Loader2, Wand2, RotateCcw, CheckCircle, Code, Eye, Cloud, AlertTriangle, Zap } from "lucide-react"
 import { EmbedGenerator } from "@/components/embed-generator"
 import { FormPreview } from "@/components/form-preview"
 
@@ -37,6 +37,11 @@ interface FormSchema {
     formType: string
     timestamp: string
     specification: string
+    method?: string
+    aiError?: string
+    errorType?: string
+    cta?: string
+    ctaSecondary?: string
   }
   id?: string
 }
@@ -49,6 +54,7 @@ export function DesignerWidget() {
   const [activeView, setActiveView] = useState<"preview" | "embed">("preview")
   const [testResult, setTestResult] = useState<any>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [generationMethod, setGenerationMethod] = useState<string | null>(null)
 
   const handleGenerate = async () => {
     if (!specification.trim()) return
@@ -57,8 +63,11 @@ export function DesignerWidget() {
     setError(null)
     setGeneratedForm(null)
     setTestResult(null)
+    setGenerationMethod(null)
 
     try {
+      console.log("🚀 Début génération pour:", specification.substring(0, 50))
+
       const response = await fetch("/api/design", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -70,9 +79,9 @@ export function DesignerWidget() {
       if (response.ok) {
         setGeneratedForm(result)
         setActiveView("preview")
+        setGenerationMethod(result._metadata?.method || "unknown")
 
-        // Dans la fonction handleGenerate, après setGeneratedForm(result), ajouter :
-        console.log("📝 Formulaire généré:", result.title, "ID:", result.id)
+        console.log("✅ Formulaire généré:", result.title, "Méthode:", result._metadata?.method)
 
         // Sauvegarder automatiquement dans Blob Store
         setIsSaving(true)
@@ -84,13 +93,10 @@ export function DesignerWidget() {
           })
 
           const saveResult = await saveResponse.json()
-          console.log("💾 Sauvegarde résultat:", saveResult)
+          console.log("💾 Sauvegarde résultat:", saveResult.success ? "✅ OK" : "❌ Erreur")
 
-          if (saveResult.success) {
-            // Mettre à jour le formulaire avec l'ID de sauvegarde si différent
-            if (saveResult.form && saveResult.form.id !== result.id) {
-              setGeneratedForm(saveResult.form)
-            }
+          if (saveResult.success && saveResult.form && saveResult.form.id !== result.id) {
+            setGeneratedForm(saveResult.form)
           }
         } catch (saveError) {
           console.error("❌ Erreur sauvegarde:", saveError)
@@ -98,10 +104,22 @@ export function DesignerWidget() {
           setIsSaving(false)
         }
       } else {
-        setError(result.error || "Erreur lors de la génération")
+        // Gestion d'erreur améliorée
+        let errorMessage = result.error || "Erreur lors de la génération"
+
+        if (result.details?.includes("PERMISSION_DENIED") || result.details?.includes("403")) {
+          errorMessage = "Clé API Gemini invalide. Vérifiez votre configuration dans les paramètres."
+        } else if (result.details?.includes("overloaded") || result.details?.includes("503")) {
+          errorMessage = "API Gemini temporairement surchargée. Un template de fallback a été utilisé."
+        } else if (result.details?.includes("QUOTA_EXCEEDED") || result.details?.includes("429")) {
+          errorMessage = "Quota API Gemini dépassé. Un template de fallback a été utilisé."
+        }
+
+        setError(errorMessage)
       }
-    } catch (err) {
-      setError("Erreur de connexion")
+    } catch (err: any) {
+      console.error("💥 Erreur réseau:", err)
+      setError("Erreur de connexion au serveur")
     } finally {
       setIsGenerating(false)
     }
@@ -113,10 +131,31 @@ export function DesignerWidget() {
     setSpecification("")
     setActiveView("preview")
     setTestResult(null)
+    setGenerationMethod(null)
   }
 
   const handleTestResult = (result: any) => {
     setTestResult(result)
+  }
+
+  const getMethodBadge = () => {
+    if (!generationMethod) return null
+
+    switch (generationMethod) {
+      case "ai-generated":
+        return (
+          <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+            <Zap className="w-3 h-3" />
+            IA Gemini
+          </Badge>
+        )
+      case "intelligent-fallback":
+        return <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">🧠 Fallback Intelligent</Badge>
+      case "template-based":
+        return <Badge className="bg-orange-100 text-orange-800 flex items-center gap-1">📋 Template</Badge>
+      default:
+        return <Badge className="bg-gray-100 text-gray-800 flex items-center gap-1">❓ Inconnu</Badge>
+    }
   }
 
   return (
@@ -129,13 +168,16 @@ export function DesignerWidget() {
                 Designer de Formulaires IA
               </h3>
               <p className="text-slate-600 dark:text-slate-300">
-                Décrivez votre formulaire en détail - sauvegarde automatique dans Blob Store
+                Décrivez votre formulaire en détail - système de fallback intelligent intégré
               </p>
             </div>
-            <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">
-              <Cloud className="w-3 h-3" />
-              Auto-Save
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">
+                <Cloud className="w-3 h-3" />
+                Auto-Save
+              </Badge>
+              {getMethodBadge()}
+            </div>
           </div>
         </div>
 
@@ -199,9 +241,58 @@ export function DesignerWidget() {
 
         {error && (
           <Alert className="mt-6 rounded-xl border-0 glass-error animate-fade-in">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Problème détecté :</strong>
+              <br />
+              {error}
+              <br />
+              <br />
+              <strong>💡 Solutions :</strong>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                {error.includes("Clé API") ? (
+                  <>
+                    <li>Cliquez sur l'icône ⚙️ en haut à gauche pour configurer votre clé API Gemini</li>
+                    <li>
+                      Obtenez une clé gratuite sur{" "}
+                      <a
+                        href="https://makersuite.google.com/app/apikey"
+                        target="_blank"
+                        className="text-blue-600 underline"
+                        rel="noreferrer"
+                      >
+                        Google AI Studio
+                      </a>
+                    </li>
+                    <li>Le système utilisera automatiquement un fallback intelligent</li>
+                  </>
+                ) : error.includes("surchargée") ? (
+                  <>
+                    <li>L'API Gemini est temporairement surchargée</li>
+                    <li>Le système a automatiquement utilisé un fallback intelligent</li>
+                    <li>Votre formulaire fonctionne parfaitement même sans l'IA</li>
+                    <li>Réessayez plus tard pour bénéficier de l'IA</li>
+                  </>
+                ) : (
+                  <>
+                    <li>Réessayez dans quelques secondes</li>
+                    <li>Utilisez une description plus simple</li>
+                    <li>Le système utilisera automatiquement un fallback intelligent</li>
+                  </>
+                )}
+              </ul>
+            </AlertDescription>
           </Alert>
         )}
+
+        {/* Indicateur de statut du système */}
+        <Alert className="mt-4 rounded-xl border-0 glass-card">
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>🛡️ Système Résilient :</strong> Ce designer fonctionne TOUJOURS, même si l'API Gemini est
+            indisponible. Le fallback intelligent analyse votre demande et génère un formulaire adapté.
+          </AlertDescription>
+        </Alert>
       </Card>
 
       {generatedForm && (
@@ -211,6 +302,11 @@ export function DesignerWidget() {
               <div>
                 <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100">{generatedForm.title}</h4>
                 <p className="text-slate-600 dark:text-slate-300">{generatedForm.description}</p>
+                {generatedForm._metadata?.aiError && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    🧠 Généré par fallback intelligent (API temporairement indisponible)
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -247,6 +343,13 @@ export function DesignerWidget() {
                 {activeView === "preview"
                   ? " Testez-le directement ci-dessus pour voir les résultats dans le Dashboard."
                   : " Utilisez le code d'intégration pour l'ajouter à votre site."}
+                <br />
+                <strong>Méthode :</strong>{" "}
+                {generationMethod === "ai-generated"
+                  ? "🤖 Généré par IA Gemini"
+                  : generationMethod === "intelligent-fallback"
+                    ? "🧠 Fallback intelligent"
+                    : "📋 Template de fallback"}
               </AlertDescription>
             </Alert>
           </Card>

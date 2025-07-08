@@ -167,15 +167,26 @@ export function FormPreview({ formData, onTestResult }: FormPreviewProps) {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Test en cours...
+                Traitement...
               </>
             ) : (
               <>
                 <Send className="w-4 h-4 mr-2" />
-                Tester le Formulaire
+                {formData._metadata?.cta || "Tester le Formulaire"}
               </>
             )}
           </Button>
+
+          {formData._metadata?.ctaSecondary && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-xl py-3 mt-2 border-green-200 text-green-700 hover:bg-green-50 bg-transparent"
+              onClick={() => alert(`Action: ${formData._metadata.ctaSecondary}`)}
+            >
+              {formData._metadata.ctaSecondary}
+            </Button>
+          )}
         </form>
 
         {response && (

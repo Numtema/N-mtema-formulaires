@@ -59,6 +59,24 @@ function findMessageField(submission: any): string | null {
   return null
 }
 
+// Ajouter ces fonctions de détection spécialisées après les fonctions existantes :
+
+// Fonction pour détecter les formulaires d'expédition
+function detectExpeditionFields(submission: any) {
+  const expeditionFields = {
+    origine: submission.ville_origine || submission.origine || submission.depart,
+    destination: submission.ville_destination || submission.destination || submission.arrivee,
+    poids: submission.poids_colis || submission.poids,
+    expediteur: submission.nom_expediteur || submission.expediteur,
+    tel_expediteur: submission.tel_expediteur || submission.telephone_expediteur,
+    destinataire: submission.nom_destinataire || submission.destinataire,
+    tel_destinataire: submission.tel_destinataire || submission.telephone_destinataire,
+    type_envoi: submission.type_envoi || submission.service,
+  }
+
+  return expeditionFields
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -92,6 +110,13 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error("Erreur récupération formulaire original:", error)
       }
+    }
+
+    // Dans la fonction POST, après la détection du type de formulaire, ajouter :
+    if (submission.formType === "expedition" || submission.ville_origine || submission.poids_colis) {
+      const expeditionData = detectExpeditionFields(submission)
+      submission._expeditionData = expeditionData
+      submission.formType = "expedition"
     }
 
     // Traiter les fichiers uploadés
