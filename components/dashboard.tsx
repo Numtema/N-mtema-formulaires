@@ -130,13 +130,13 @@ export function Dashboard() {
       details.push(`${displayKey}: ${displayValue}`)
     })
 
-    if (submission.formType === "expedition" || submission.data.ville_origine) {
-      if (submission.data.ville_origine) details.push(`🚀 De: ${submission.data.ville_origine}`)
-      if (submission.data.ville_destination) details.push(`🎯 Vers: ${submission.data.ville_destination}`)
-      if (submission.data.poids_colis) details.push(`⚖️ Poids: ${submission.data.poids_colis}kg`)
-      if (submission.data.type_envoi) details.push(`📦 Service: ${submission.data.type_envoi}`)
+    if (submission.formType === "expedition" || submission.data.origine) {
+      if (submission.data.origine) details.push(`🚀 De: ${submission.data.origine}`)
+      if (submission.data.destination) details.push(`🎯 Vers: ${submission.data.destination}`)
+      if (submission.data.poids) details.push(`⚖️ Poids: ${submission.data.poids}kg`)
       if (submission.data.nom_expediteur) details.push(`👤 Expéditeur: ${submission.data.nom_expediteur}`)
       if (submission.data.nom_destinataire) details.push(`👥 Destinataire: ${submission.data.nom_destinataire}`)
+      if (submission.data.message) details.push(`💬 Message: ${submission.data.message}`)
     }
 
     return details

@@ -5,33 +5,20 @@ import { callGemini } from "@/lib/gemini"
 const FALLBACK_FORMS = {
   expedition: {
     title: "Formulaire d'Expédition de Colis",
-    description: "Expédiez vos colis facilement et obtenez un devis instantané",
+    description: "Expédiez vos colis d'Abidjan vers Paris - Devis gratuit",
     fields: [
-      { name: "ville_origine", type: "text", placeholder: "Ville d'origine (ex: Abidjan)", required: true },
-      { name: "ville_destination", type: "text", placeholder: "Ville de destination (ex: Paris)", required: true },
-      { name: "poids_colis", type: "number", placeholder: "Poids du colis en kg", required: true },
+      { name: "origine", type: "text", placeholder: "Ville d'origine (Abidjan)", required: true },
+      { name: "destination", type: "text", placeholder: "Ville de destination (Paris)", required: true },
+      { name: "poids", type: "number", placeholder: "Poids du colis en kg", required: true },
       { name: "nom_expediteur", type: "text", placeholder: "Nom de l'expéditeur", required: true },
       { name: "tel_expediteur", type: "tel", placeholder: "Téléphone de l'expéditeur", required: true },
       { name: "nom_destinataire", type: "text", placeholder: "Nom du destinataire", required: true },
       { name: "tel_destinataire", type: "tel", placeholder: "Téléphone du destinataire", required: true },
-      {
-        name: "type_envoi",
-        type: "select",
-        placeholder: "Choisir le type d'envoi",
-        required: true,
-        options: ["Express 24h", "Standard 3-5 jours", "Économique 7-10 jours"],
-      },
-      {
-        name: "message",
-        type: "textarea",
-        placeholder: "Message ou instructions spéciales (optionnel)",
-        required: false,
-      },
+      { name: "message", type: "textarea", placeholder: "Message à envoyer", required: false },
     ],
     _metadata: {
       formType: "expedition",
       cta: "Demander un Devis",
-      ctaSecondary: "Réserver l'Expédition",
     },
   },
   contact: {
@@ -165,22 +152,22 @@ Si la demande concerne l'expédition, le transport, les colis, ou contient des m
 
 {
   "title": "Formulaire d'Expédition de Colis",
-  "description": "Expédiez vos colis facilement et obtenez un devis instantané",
+  "description": "Expédiez vos colis d'Abidjan vers Paris - Devis gratuit",
   "fields": [
     {
-      "name": "ville_origine",
+      "name": "origine",
       "type": "text",
-      "placeholder": "Ville d'origine (ex: Abidjan)",
+      "placeholder": "Ville d'origine (Abidjan)",
       "required": true
     },
     {
-      "name": "ville_destination", 
+      "name": "destination", 
       "type": "text",
-      "placeholder": "Ville de destination (ex: Paris)",
+      "placeholder": "Ville de destination (Paris)",
       "required": true
     },
     {
-      "name": "poids_colis",
+      "name": "poids",
       "type": "number",
       "placeholder": "Poids du colis en kg",
       "required": true
@@ -210,23 +197,15 @@ Si la demande concerne l'expédition, le transport, les colis, ou contient des m
       "required": true
     },
     {
-      "name": "type_envoi",
-      "type": "select",
-      "placeholder": "Choisir le type d'envoi",
-      "required": true,
-      "options": ["Express 24h", "Standard 3-5 jours", "Économique 7-10 jours"]
-    },
-    {
       "name": "message",
       "type": "textarea",
-      "placeholder": "Message ou instructions spéciales (optionnel)",
+      "placeholder": "Message à envoyer",
       "required": false
     }
   ],
   "_metadata": {
     "formType": "expedition",
-    "cta": "Demander un Devis",
-    "ctaSecondary": "Réserver l'Expédition"
+    "cta": "Demander un Devis"
   }
 }
 

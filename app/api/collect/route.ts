@@ -64,14 +64,14 @@ function findMessageField(submission: any): string | null {
 // Fonction pour détecter les formulaires d'expédition
 function detectExpeditionFields(submission: any) {
   const expeditionFields = {
-    origine: submission.ville_origine || submission.origine || submission.depart,
-    destination: submission.ville_destination || submission.destination || submission.arrivee,
-    poids: submission.poids_colis || submission.poids,
+    origine: submission.origine || submission.ville_origine || submission.depart,
+    destination: submission.destination || submission.ville_destination || submission.arrivee,
+    poids: submission.poids || submission.poids_colis,
     expediteur: submission.nom_expediteur || submission.expediteur,
     tel_expediteur: submission.tel_expediteur || submission.telephone_expediteur,
     destinataire: submission.nom_destinataire || submission.destinataire,
     tel_destinataire: submission.tel_destinataire || submission.telephone_destinataire,
-    type_envoi: submission.type_envoi || submission.service,
+    message: submission.message,
   }
 
   return expeditionFields
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Dans la fonction POST, après la détection du type de formulaire, ajouter :
-    if (submission.formType === "expedition" || submission.ville_origine || submission.poids_colis) {
+    if (submission.formType === "expedition" || submission.origine || submission.poids) {
       const expeditionData = detectExpeditionFields(submission)
       submission._expeditionData = expeditionData
       submission.formType = "expedition"

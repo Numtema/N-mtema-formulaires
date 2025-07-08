@@ -197,10 +197,10 @@ function generateFallbackResponse(formData: any): string {
   const nom = formData.nom_expediteur || formData.name || formData.nom || "cher client"
 
   // Réponse spécialisée pour l'expédition
-  if (formData.formType === "expedition" || formData.ville_origine) {
-    const origine = formData.ville_origine || "votre ville"
-    const destination = formData.ville_destination || "la destination"
-    const poids = formData.poids_colis || "votre colis"
+  if (formData.formType === "expedition" || formData.origine) {
+    const origine = formData.origine || formData.ville_origine || "votre ville"
+    const destination = formData.destination || formData.ville_destination || "la destination"
+    const poids = formData.poids || formData.poids_colis || "votre colis"
 
     return `Bonjour ${nom}, nous avons bien reçu votre demande d'expédition de ${origine} vers ${destination}. Notre équipe calcule le meilleur tarif pour votre envoi de ${poids}kg. Vous recevrez votre devis sous 2h ! 📦✈️`
   }
